@@ -8,4 +8,4 @@ DEBUG = True
 
 # Connect to the database
 
-SQLALCHEMY_DATABASE_URI = 'postgres://syriii:123456@localhost:5432/db1'
+SQLALCHEMY_DATABASE_URI = 'postgres://syriii:123456@localhost:5432/db2'
