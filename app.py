@@ -14,6 +14,7 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 import sys
+from sqlalchemy import func
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -214,34 +215,26 @@ def index():
 @app.route('/venues')
 def venues():
     data = []
-    city = ""
-    state = ""
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    venue_result = Venue.query.group_by(
-        Venue.id, Venue.city, Venue.state).all()
+    all_areas = Venue.query.with_entities(func.count(Venue.id), Venue.city, Venue.state).group_by(Venue.city, Venue.state).all()
 
-    for venue in venue_result:
-        upcoming_shows = Show.query.filter(Show.venue_id == venue.id).filter(Show.start_time > current_time).all()
-        upcoming_shows_count = len(upcoming_shows)
+    for area in all_areas:
+        venues_results = Venue.query.filter_by(state=area.state).filter_by(city=area.city).all()
+        venues_data = []
 
-        if city == venue.city and state == venue.state:
-            data[len(data) - 1]["venues"].append({
+        for venue in venues_results:
+            upcoming_shows = Show.query.filter(Show.venue_id == 1).filter(Show.start_time > current_time).all()
+            upcoming_shows_count = len(upcoming_shows)
+            venues_data.append({
                 "id": venue.id,
                 "name": venue.name,
-                "num_upcomping_shows": upcoming_shows_count
+                "num_upcoming_shows": upcoming_shows_count
             })
-        else:
-            city = venue.city
-            state = venue.state
-            data.append({
-                "city": venue.city,
-                "state": venue.state,
-                "venues": [{
-                    "id": venue.id,
-                    "name": venue.name,
-                    "num_upcomping_shows": upcoming_shows_count
-                }]
-            })
+        data.append({
+            "city": area.city,
+            "state": area.state,
+            "venues": venues_data
+        })
     return render_template('pages/venues.html', areas=data)
 
 
@@ -337,7 +330,7 @@ def delete_venue(venue_id):
     finally:
         db.session.close()
 
-    return None
+    return render_template('pages/venues.html', areas=data)
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -389,7 +382,7 @@ def show_artist(artist_id):
 def edit_artist(artist_id):
     form = ArtistForm()
     artist_result = Artist.query.get(artist_id)
-    if not artists_result:
+    if not artist_result:
         return render_template('errors/404.html')
     form.name.data = artist_result.name
     form.city.data = artist_result.city
@@ -400,7 +393,7 @@ def edit_artist(artist_id):
     form.image_link.data = artist_result.image_link
     form.website.data = artist_result.website
 
-    return render_template('forms/edit_artist.html', form=form, artist=artist)
+    return render_template('forms/edit_artist.html', form=form, artist=artist_result)
 
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
@@ -416,8 +409,8 @@ def edit_artist_submission(artist_id):
         artist_result.image_link = request.form['image_link']
         artist_result.facebook_link = request.form['facebook_link']
         artist_result.website = request.form['website']
-        # artist_result.seeking_venue
-        # artist_result.seeking_description
+        artist_result.seeking_venue=True if 'seeking_venue' in request.form else False
+        artist_result.seeking_description=request.form['seeking_description']
         db.session.commit()
     except:
         error = True
@@ -449,7 +442,7 @@ def edit_venue(venue_id):
     form.image_link.data = venue_result.image_link
     form.website.data = venue_result.website
 
-    return render_template('forms/edit_venue.html', form=form, venue=venue)
+    return render_template('forms/edit_venue.html', form=form, venue=venue_result)
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])

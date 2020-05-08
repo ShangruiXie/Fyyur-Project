@@ -2,7 +2,7 @@ from datetime import datetime
 from flask_wtf import Form
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
 from wtforms.validators import DataRequired, AnyOf, URL, Regexp
-
+import re
 
 state_choices = [
     ('AL', 'AL'),
@@ -79,7 +79,6 @@ genres_choices = [
     ('Other', 'Other'),
 ]
 
-
 class ShowForm(Form):
     artist_id = StringField(
         'artist_id'
@@ -109,10 +108,10 @@ class VenueForm(Form):
         'address', validators=[DataRequired()]
     )
     phone = StringField(
-        'phone', validators=[Regexp(regex=r'^\d{10}$')]
+        'phone', validators=[DataRequired(), Regexp('^\d{10}$', message="Wrong phone numbers")]
     )
     image_link = StringField(
-        'image_link'
+        'image_link', validators=[URL()]
     )
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
@@ -124,6 +123,7 @@ class VenueForm(Form):
     website = StringField(
         'website', validators=[URL()]
     )
+    
 
 
 class ArtistForm(Form):
@@ -138,10 +138,10 @@ class ArtistForm(Form):
         choices=state_choices
     )
     phone = StringField(
-        'phone', validators=[Regexp(regex=r'^\d{10}$')]
+        'phone', validators=[DataRequired(), Regexp('^\d{10}$', message="Wrong phone numbers")]
     )
     image_link = StringField(
-        'image_link'
+        'image_link', validators=[URL()]
     )
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
@@ -160,4 +160,4 @@ class ArtistForm(Form):
         'seeking_description'
     )
 
-# TODO IMPLEMENT NEW ARTIST FORM AND NEW SHOW FORM
+
