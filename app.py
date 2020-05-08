@@ -163,7 +163,7 @@ class Show(db.Model):
             'artist_id': self.artist_id,
             'artist_name': self.Artist.name,
             'artiist_image_link': self.Artist.image_link,
-            'start_time': self.start_time
+            'start_time': self.start_time.strftime('%Y-%m-%d %H:%M:%S')
         }
 
     def artisitDetail(self):
@@ -171,7 +171,7 @@ class Show(db.Model):
             'artist_id': self.artist_id,
             'artist_name': self.Artist.name,
             'artiist_image_link': self.Artist.image_link,
-            'start_time': self.start_time
+            'start_time': self.start_time.strftime('%Y-%m-%d %H:%M:%S')
         }
 
     def venueDetail(self):
@@ -179,7 +179,7 @@ class Show(db.Model):
             'venue_id': self.venue_id,
             'venue_name': self.Venue.name,
             'venue_image_link': self.Venue.image_link,
-            'start_time': self.start_time
+            'start_time': self.start_time.strftime('%Y-%m-%d %H:%M:%S')
         }
 
 #----------------------------------------------------------------------------#
@@ -353,7 +353,7 @@ def search_artists():
     artists_result = Artist.query.filter(Artist.name.ilike(
         '%' + request.form['search_term'] + '%')).all()
     data = list(map(Artist.shortDetail, artists_result))
-    Response = {
+    response = {
         'count': len(data),
         "data": data
     }
@@ -363,25 +363,25 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
     artist_result = Artist.query.get(artist_id)
-    if not artists_result:
+    if not artist_result:
         return render_template('errors/404.html')
 
-    artists_detail = Artist.allDetail(artist_result)
+    artist_detail = Artist.allDetail(artist_result)
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # past shows
     past_shows_result = Show.query.join(Artist).filter(
         Show.artist_id == artist_id).filter(Show.start_time <= current_time)
     past_shows = list(map(Show.venueDetail, past_shows_result))
-    artists_detail["past_shows"] = past_shows
-    artists_detail["past_shows_count"] = len(past_shows)
+    artist_detail["past_shows"] = past_shows
+    artist_detail["past_shows_count"] = len(past_shows)
     # upcoming shows
     upcoming_shows_result = Show.query.join(Artist).filter(
         Show.artist_id == artist_id).filter(Show.start_time > current_time)
     upcoming_shows = list(map(Show.venueDetail, upcoming_shows_result))
-    artists_detail["upcoming_shows"] = upcoming_shows
-    artists_detail["upcoming_shows_count"] = len(upcoming_shows)
-    return render_template('pages/show_artist.html', artist=data)
+    artist_detail["upcoming_shows"] = upcoming_shows
+    artist_detail["upcoming_shows_count"] = len(upcoming_shows)
+    return render_template('pages/show_artist.html', artist=artist_detail)
 
 #  Update
 #  ----------------------------------------------------------------
@@ -505,6 +505,7 @@ def create_artist_submission():
             image_link=request.form['image_link'],
             website=request.form['website'],
             facebook_link=request.form['facebook_link'],
+            seeking_venue=True if 'seeking_venue' in request.form else False,
             seeking_description=request.form['seeking_description']
         )
         db.session.add(new_artist)
